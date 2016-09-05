@@ -14,7 +14,6 @@ class ProofBoxSpec extends WordSpec with Matchers with GivenWhenThen {
         implicit val aProof: AProof = new AProof {}
         implicit val anotherProof: AnotherProof = new AnotherProof {}
       }
-      object MyContext extends MyContext
 
       Then("without the proofs nothing can be proven")
       illTyped { """implicitly[AProof]""" }
@@ -26,8 +25,35 @@ class ProofBoxSpec extends WordSpec with Matchers with GivenWhenThen {
       Then("the proof can be found")
       implicitly[AProof] shouldBe a [AProof]
 
-      And("the second proof remains not in scope")
+      And("the second proof is still not in scope")
       illTyped { """implicitly[AnotherProof]""" }
+    }
+
+    "capture implicit from two contexts" in {
+      Given("a proof that depends on another")
+      trait FirstProof
+      trait FirstContext {
+        implicit val firstProof: FirstProof = new FirstProof {}
+      }
+
+      trait DependantProof
+      trait DependantContext {
+        implicit def dependantProof(implicit a: FirstProof): DependantProof = new DependantProof {}
+      }
+
+      Then("without the proofs nothing can be proven")
+      illTyped { """implicitly[FirstProof]""" }
+      illTyped { """implicitly[DependantProof]""" }
+
+      When("the dependant proof is captured using the box")
+      trait T extends FirstContext with DependantContext
+      implicit val localProof = ProofBox[T, DependantProof]
+
+      Then("the proof can be found")
+      implicitly[DependantProof] shouldBe a [DependantProof]
+
+      And("the prerequisite proof is still not in scope")
+      illTyped { """implicitly[FirstProof]""" }
     }
   }
 }
