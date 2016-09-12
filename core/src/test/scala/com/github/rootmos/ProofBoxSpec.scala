@@ -20,6 +20,8 @@ class ProofBoxSpec extends WordSpec with Matchers with GivenWhenThen {
       illTyped { """implicitly[AnotherProof]""" }
 
       When("the proof is captured using the box")
+      // TODO: make it possible to use a type annotation, currently gives you ambiguous
+      // instances because the macro captures the outer context...
       implicit val localProof = ProofBox[MyContext, AProof]
 
       Then("the proof can be found")
@@ -46,6 +48,8 @@ class ProofBoxSpec extends WordSpec with Matchers with GivenWhenThen {
       illTyped { """implicitly[DependantProof]""" }
 
       When("the dependant proof is captured using the box")
+      // TODO: This work with: ProofBox[FirstContext with DependantContex, DependantProof] directly, now
+      // this complains about RefinedTypes...
       trait T extends FirstContext with DependantContext
       implicit val localProof = ProofBox[T, DependantProof]
 
